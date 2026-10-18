@@ -8,6 +8,7 @@ We follow format from: https://docs.litellm.ai/docs/completion/function_call
 
 import copy
 import json
+import math
 import re
 from collections.abc import Iterable
 from typing import Any, Final, Literal, NotRequired, TypedDict, cast
@@ -553,6 +554,27 @@ def _extract_and_validate_params(
             except ValueError:
                 raise FunctionCallValidationError(
                     f"Parameter '{param_name}' is expected to be an integer."
+                )
+        elif param_type == "number":
+            try:
+                param_value = float(param_value)
+            except ValueError:
+                raise FunctionCallValidationError(
+                    f"Parameter '{param_name}' is expected to be a number."
+                )
+            if not math.isfinite(param_value):
+                raise FunctionCallValidationError(
+                    f"Parameter '{param_name}' is expected to be a finite number."
+                )
+        elif param_type == "boolean":
+            lowered = param_value.lower()
+            if lowered == "true":
+                param_value = True
+            elif lowered == "false":
+                param_value = False
+            else:
+                raise FunctionCallValidationError(
+                    f"Parameter '{param_name}' is expected to be a boolean."
                 )
         elif param_type == "array":
             try:
