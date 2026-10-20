@@ -514,6 +514,10 @@ def convert_fncall_messages_to_non_fncall_messages(
     return converted_messages
 
 
+_BOOLEAN_TRUE_STRINGS = frozenset({"true", "1", "yes", "y", "t", "on"})
+_BOOLEAN_FALSE_STRINGS = frozenset({"false", "0", "no", "n", "f", "off"})
+
+
 def _extract_and_validate_params(
     matching_tool: ChatCompletionToolParamFunctionChunk,
     param_matches: Iterable[re.Match],
@@ -567,10 +571,12 @@ def _extract_and_validate_params(
                     f"Parameter '{param_name}' is expected to be a finite number."
                 )
         elif param_type == "boolean":
+            # Same spellings Pydantic's bool validator accepts, so values that
+            # used to reach the action model unchanged still do.
             lowered = param_value.lower()
-            if lowered == "true":
+            if lowered in _BOOLEAN_TRUE_STRINGS:
                 param_value = True
-            elif lowered == "false":
+            elif lowered in _BOOLEAN_FALSE_STRINGS:
                 param_value = False
             else:
                 raise FunctionCallValidationError(

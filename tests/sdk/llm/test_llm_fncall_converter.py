@@ -1113,3 +1113,27 @@ def test_boolean_coercion_is_case_insensitive():
     assert _parsed_arguments(
         tools, "<function=typed>\n<parameter=flag>True</parameter>\n</function>"
     ) == {"flag": True}
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("1", True),
+        ("yes", True),
+        ("Y", True),
+        ("t", True),
+        ("on", True),
+        ("0", False),
+        ("no", False),
+        ("N", False),
+        ("f", False),
+        ("off", False),
+    ],
+)
+def test_boolean_params_keep_pydantic_bool_spellings(raw, expected):
+    """Spellings Pydantic's bool validator accepts must not become tool-call
+    errors just because the schema declares a boolean."""
+    tools = _typed_tool({"flag": {"type": "boolean"}}, ["flag"])
+    assert _parsed_arguments(
+        tools, f"<function=typed>\n<parameter=flag>{raw}</parameter>\n</function>"
+    ) == {"flag": expected}
